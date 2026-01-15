@@ -39,8 +39,20 @@ class StructureParser(object):
     conn = pd.DataFrame(conn)
     connections = conn[conn['residue1_chain_id'].isin(chain_ids)|conn['residue2_chain_id'].isin(chain_ids)]
     return connections
-  def get_chain(self, chain_id):
-    structure_id = str(uuid4()) if structure_id is None else structure_id
+  def get_residues(self,):
+    poly = dict(
+      chain_id = self.mmcif_dict.get("_pdbx_poly_seq_scheme.asym_id", []), # chain_id
+      seq_id = self.mmcif_dict.get("_pdbx_poly_seq_scheme.seq_id", []), # seq id in chain
+      residue_name = self.mmcif_dict.get("_pdbx_poly_seq_scheme.mon_id", []), # residue name
+    )
+    poly = pd.DataFrame(poly)
+    poly['seq_id'] = poly['seq_id'].astype(int)
+    nonpoly = dict(
+      chain_id = self.mmcif_dict.get("_pdbx_nonpoly_scheme.asym_id", []), # chain_id
+      suedoresidue_name = self.mmcif_dict.get("_pdbx_nonpoly_scheme.mon_id", []), # pseudo residue name
+    )
+    nonpoly = pd.DataFrame(nonpoly)
+    return poly, nonpoly
   def get_structure(self,):
     return self.structure
 
@@ -50,14 +62,6 @@ if __name__ == "__main__":
   print(entities)
   connections = parser.get_connections('1')
   print(connections)
-  structure = parser.get_structure()
-  for model_id, model in enumerate(structure):
-    # 对于一个构象
-    output_model = []
-    for chain in model:
-      # 对于一个chain
-      print(f"model_id: {model_id}, chain_id: {chain.id}")
-      for residue in chain:
-        # 对于一个residue
-        print(residue.get_resname(), end = ' ')
-      print('')
+  poly, nonpoly = parser.get_residues()
+  # print chain A
+  print(poly[poly['chain_id'] == 'A'].sort_values('seq_id', ascending = True))
