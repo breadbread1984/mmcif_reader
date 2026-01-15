@@ -23,10 +23,7 @@ class StructureParser(object):
       if row['entity_id'] not in entities: entities[row['entity_id']] = list()
       entities[row['entity_id']].append({'chain_id': row['id'], 'detail': row['detail']})
     return entities
-  def get_connections(self, entity_id):
-    entities = self.get_entities()
-    assert entity_id in entities
-    chain_ids = set([chain['chain_id'] for chain in entities[entity_id]])
+  def get_connections(self,):
     conn = dict(
       id = self.mmcif_dict.get("_struct_conn.id", []), # connection id
       residue1_chain_id = self.mmcif_dict.get("_struct_conn.ptnr1_label_asym_id", []), # chain id
@@ -37,8 +34,7 @@ class StructureParser(object):
       residue2_seq_id = self.mmcif_dict.get("_struct_conn.ptnr2_label_seq_id", []), # residue2 seq id in chain
     )
     conn = pd.DataFrame(conn)
-    connections = conn[conn['residue1_chain_id'].isin(chain_ids)|conn['residue2_chain_id'].isin(chain_ids)]
-    return connections
+    return conn
   def get_chains(self,):
     chains = dict()
     poly = dict(
@@ -67,7 +63,7 @@ if __name__ == "__main__":
   parser = StructureParser(join('tests', '1sfi.cif'))
   entities = parser.get_entities()
   print(entities)
-  connections = parser.get_connections('1')
+  connections = parser.get_connections()
   print(connections)
   chains = parser.get_chains()
   print(chains)
