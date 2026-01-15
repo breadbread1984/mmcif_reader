@@ -39,7 +39,8 @@ class StructureParser(object):
     conn = pd.DataFrame(conn)
     connections = conn[conn['residue1_chain_id'].isin(chain_ids)|conn['residue2_chain_id'].isin(chain_ids)]
     return connections
-  def get_residues(self,):
+  def get_chains(self,):
+    chains = dict()
     poly = dict(
       chain_id = self.mmcif_dict.get("_pdbx_poly_seq_scheme.asym_id", []), # chain_id
       seq_id = self.mmcif_dict.get("_pdbx_poly_seq_scheme.seq_id", []), # seq id in chain
@@ -47,12 +48,18 @@ class StructureParser(object):
     )
     poly = pd.DataFrame(poly)
     poly['seq_id'] = poly['seq_id'].astype(int)
+    poly_chain_ids = poly['chain_id'].unique()
+    for chain_id in poly_chain_ids:
+      chains[chain_id] = poly[poly['chain_id'] == chain_id].sort_values('seq_id', ascending = True)['residue_name'].tolist()
     nonpoly = dict(
       chain_id = self.mmcif_dict.get("_pdbx_nonpoly_scheme.asym_id", []), # chain_id
       suedoresidue_name = self.mmcif_dict.get("_pdbx_nonpoly_scheme.mon_id", []), # pseudo residue name
     )
     nonpoly = pd.DataFrame(nonpoly)
-    return poly, nonpoly
+    nonpoly_chain_ids = nonpoly['chain_id'].unique()
+    for chain_id in nonpoly_chain_ids:
+      chains[chain_id] = nonpoly[nonpoly['chain_id'] == chain_id]['suedoresidue_name'].tolist()
+    return chains
   def get_structure(self,):
     return self.structure
 
@@ -62,6 +69,5 @@ if __name__ == "__main__":
   print(entities)
   connections = parser.get_connections('1')
   print(connections)
-  poly, nonpoly = parser.get_residues()
-  # print chain A
-  print(poly[poly['chain_id'] == 'A'].sort_values('seq_id', ascending = True))
+  chains = parser.get_chains()
+  print(chains)
